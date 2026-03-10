@@ -42,7 +42,7 @@ export async function downloadUnsplashImage(topic: string, slug: string, targetD
 
       for (const query of searchQueries) {
         console.log(`[unsplash] Fetching random image for: "${query}"`);
-        const apiRes = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&client_id=${accessKey}`);
+        const apiRes = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&client_id=${accessKey}`, { cache: "no-store" });
 
         if (apiRes.ok) {
           const ad = await apiRes.json();
@@ -63,6 +63,7 @@ export async function downloadUnsplashImage(topic: string, slug: string, targetD
     const response = await fetch(unsplashUrl, {
       headers: { "User-Agent": "BlogAdmin/1.0" },
       redirect: "follow",
+      cache: "no-store"
     });
 
     if (!response.ok) {

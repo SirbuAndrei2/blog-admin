@@ -14,6 +14,11 @@ const NAV = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+
+  if (path === "/admin/login") {
+    return <main style={{ minHeight: "100vh", background: "#0a1122" }}>{children}</main>;
+  }
+
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       {/* Sidebar */}
@@ -51,8 +56,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        <div style={{ padding: "12px 18px", borderTop: "1px solid #1e293b" }}>
-          <div style={{ fontSize: 10, color: "#334155", fontFamily: "var(--font-mono)" }}>gpt-4o</div>
+        <div style={{ padding: "12px 18px", borderTop: "1px solid #1e293b", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 10, color: "#334155", fontFamily: "var(--font-mono)" }}>v1.0.0</div>
+          <button
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' });
+              window.location.href = '/admin/login';
+            }}
+            style={{
+              background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444", fontSize: 11, cursor: "pointer", padding: "4px 8px", borderRadius: 4, transition: "all 0.2s"
+            }}
+          >
+            Logout
+          </button>
         </div>
       </aside>
 
