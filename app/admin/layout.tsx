@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: "◈" },
   { href: "/admin/generate", label: "Generează Articol", icon: "✦" },
+  { href: "/admin/scheduled", label: "Programări", icon: "◷" },
   { href: "/admin/articles", label: "Articole", icon: "▤" },
   { href: "/admin/categories", label: "Categorii", icon: "◉" },
   { href: "/admin/authors", label: "Autori", icon: "◎" },
