@@ -224,24 +224,46 @@ function DaySelector({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, { bg: string; color: string; label: string }> = {
-    pending: { bg: "rgba(245,158,11,0.15)", color: "var(--accent)", label: "În așteptare" },
-    active: { bg: "rgba(34,197,94,0.15)", color: "var(--green)", label: "Activ" },
-    paused: { bg: "rgba(100,116,139,0.15)", color: "var(--muted)", label: "Pauză" },
-    completed: { bg: "rgba(59,130,246,0.15)", color: "var(--blue)", label: "Finalizat" },
+  const styles: Record<string, { bg: string; color: string; label: string; shadow: string }> = {
+    pending: { 
+      bg: "linear-gradient(135deg, #FFB020 0%, #FF8C00 100%)", 
+      color: "#FFFFFF", 
+      label: "În așteptare",
+      shadow: "0 2px 8px rgba(255, 140, 0, 0.4)"
+    },
+    active: { 
+      bg: "linear-gradient(135deg, #00E676 0%, #00C853 100%)", 
+      color: "#FFFFFF", 
+      label: "Activ",
+      shadow: "0 2px 8px rgba(0, 200, 83, 0.4)"
+    },
+    paused: { 
+      bg: "linear-gradient(135deg, #7C4DFF 0%, #651FFF 100%)", 
+      color: "#FFFFFF", 
+      label: "Pauză",
+      shadow: "0 2px 8px rgba(101, 31, 255, 0.4)"
+    },
+    completed: { 
+      bg: "linear-gradient(135deg, #00B0FF 0%, #2979FF 100%)", 
+      color: "#FFFFFF", 
+      label: "Finalizat",
+      shadow: "0 2px 8px rgba(41, 121, 255, 0.4)"
+    },
   };
   const s = styles[status] || styles.pending;
   return (
     <span
       style={{
-        padding: "3px 10px",
-        borderRadius: 6,
+        padding: "4px 12px",
+        borderRadius: 20,
         fontSize: 10,
-        fontWeight: 600,
+        fontWeight: 700,
         background: s.bg,
         color: s.color,
         textTransform: "uppercase",
         letterSpacing: 0.5,
+        boxShadow: s.shadow,
+        display: "inline-block",
       }}
     >
       {s.label}
