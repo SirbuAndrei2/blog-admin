@@ -9,9 +9,8 @@ export async function GET() {
             orderBy: { created_at: "desc" },
         });
         return NextResponse.json(sites);
-    } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "Unknown error";
-        return NextResponse.json({ error: msg }, { status: 500 });
+    } catch {
+        return NextResponse.json([], { status: 200 });
     }
 }
 

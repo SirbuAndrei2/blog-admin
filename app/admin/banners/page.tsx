@@ -46,8 +46,10 @@ export default function BannersPage() {
                 fetch("/api/banners"),
                 fetch("/api/sites")
             ]);
-            setBanners(await bRes.json());
-            setSites(await sRes.json());
+            const bData = await bRes.json();
+            const sData = await sRes.json();
+            setBanners(Array.isArray(bData) ? bData : []);
+            setSites(Array.isArray(sData) ? sData : []);
         } catch (err) {
             setError("Eroare la încărcarea datelor");
         } finally {

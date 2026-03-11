@@ -17,18 +17,28 @@ export default function ArticlesPage() {
 
   async function load(status = "", siteId: number | "" = "") {
     setLoading(true);
-    const res = await fetch(`/api/articles?status=${status}&site_id=${siteId}&limit=50`);
-    const data = await res.json();
-    setArticles(data.articles ?? []);
-    setTotal(data.total ?? 0);
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/articles?status=${status}&site_id=${siteId}&limit=50`);
+      const data = await res.json();
+      setArticles(data.articles ?? []);
+      setTotal(data.total ?? 0);
+    } catch {
+      setArticles([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
     async function fetchSites() {
-      const res = await fetch("/api/sites");
-      const data = await res.json();
-      setSites(data);
+      try {
+        const res = await fetch("/api/sites");
+        const data = await res.json();
+        setSites(Array.isArray(data) ? data : []);
+      } catch {
+        setSites([]);
+      }
     }
     fetchSites();
   }, []);

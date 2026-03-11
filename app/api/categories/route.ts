@@ -3,8 +3,12 @@ import prisma from "@/lib/prisma";
 import slugify from "slugify";
 
 export async function GET() {
-  const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
-  return NextResponse.json(categories);
+  try {
+    const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
+    return NextResponse.json(categories);
+  } catch {
+    return NextResponse.json([], { status: 200 });
+  }
 }
 
 export async function POST(req: NextRequest) {

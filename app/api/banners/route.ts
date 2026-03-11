@@ -11,13 +11,16 @@ export async function GET(req: NextRequest) {
     if (site_id) where.site_id = Number(site_id);
     if (type) where.type = type;
 
-    const banners = await prisma.banner.findMany({
-        where,
-        orderBy: { created_at: "desc" },
-        include: { site: true },
-    });
-
-    return NextResponse.json(banners);
+    try {
+        const banners = await prisma.banner.findMany({
+            where,
+            orderBy: { created_at: "desc" },
+            include: { site: true },
+        });
+        return NextResponse.json(banners);
+    } catch {
+        return NextResponse.json([], { status: 200 });
+    }
 }
 
 // POST /api/banners - create new banner

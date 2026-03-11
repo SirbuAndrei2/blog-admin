@@ -14,18 +14,21 @@ export async function GET(req: NextRequest) {
   const where: any = {};
   if (status) where.status = status;
   if (site_id) where.site_id = Number(site_id);
-  const [articles, total] = await Promise.all([
-    prisma.article.findMany({
-      where,
-      include: { category: true, author: true, meta: true },
-      orderBy: { created_at: "desc" },
-      skip,
-      take: limit,
-    }),
-    prisma.article.count({ where }),
-  ]);
-
-  return NextResponse.json({ articles, total, page, pages: Math.ceil(total / limit) });
+  try {
+    const [articles, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        include: { category: true, author: true, meta: true },
+        orderBy: { created_at: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.article.count({ where }),
+    ]);
+    return NextResponse.json({ articles, total, page, pages: Math.ceil(total / limit) });
+  } catch {
+    return NextResponse.json({ articles: [], total: 0, page, pages: 0 }, { status: 200 });
+  }
 }
 
 // POST /api/articles - create/save article

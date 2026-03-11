@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET() {
-  const authors = await prisma.author.findMany({ orderBy: { name: "asc" } });
-  return NextResponse.json(authors);
+  try {
+    const authors = await prisma.author.findMany({ orderBy: { name: "asc" } });
+    return NextResponse.json(authors);
+  } catch {
+    return NextResponse.json([], { status: 200 });
+  }
 }
 
 export async function POST(req: NextRequest) {

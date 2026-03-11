@@ -171,9 +171,9 @@ export default function GeneratePage() {
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [logs]);
   useEffect(() => {
-    fetch("/api/categories").then(r => r.json()).then(setCategories).catch(() => { });
-    fetch("/api/authors").then(r => r.json()).then(setAuthors).catch(() => { });
-    fetch("/api/sites").then(r => r.json()).then(setSites).catch(() => { });
+    fetch("/api/categories").then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : [])).catch(() => { });
+    fetch("/api/authors").then(r => r.json()).then(d => setAuthors(Array.isArray(d) ? d : [])).catch(() => { });
+    fetch("/api/sites").then(r => r.json()).then(d => setSites(Array.isArray(d) ? d : [])).catch(() => { });
   }, []);
 
   // Refresh image from Unsplash
@@ -413,7 +413,7 @@ export default function GeneratePage() {
               </Field>
               <Field label="Limbă">
                 <div style={{ display: "flex", gap: 6 }}>
-                  {[["ro", "🇷🇴 Română"], ["en", "🇬🇧 Engleză"]].map(([v, l]) => (
+                  {[["ro", "🇷🇴 Română"], ["en", "🇬🇧 Engleză"]].map(([v]) => (
                     <Tag key={v} val={v} current={opts.language} onClick={() => setOpts({ ...opts, language: v })} />
                   ))}
                 </div>
