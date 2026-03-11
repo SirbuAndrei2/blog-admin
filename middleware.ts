@@ -3,6 +3,11 @@ import type { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
 
 export async function middleware(request: NextRequest) {
+    // Skip auth in development
+    if (process.env.NODE_ENV === 'development') {
+        return NextResponse.next();
+    }
+
     // If we are accessing an admin route that is not the login page
     if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin/login')) {
         const token = request.cookies.get('auth_token')?.value;
