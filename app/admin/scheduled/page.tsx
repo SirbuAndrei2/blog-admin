@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const TONES = ["Profesional", "Casual", "Tehnic", "Inspirațional", "Educativ", "Jurnalistic"];
 const LENGTHS = [
@@ -21,52 +21,6 @@ const DAYS_OF_WEEK = [
   { label: "Vineri", value: "friday" },
   { label: "Sâmbătă", value: "saturday" },
   { label: "Duminică", value: "sunday" },
-];
-
-// Mock data for UI
-const MOCK_CATEGORIES = [
-  { id: 1, name: "Tehnologie", color: "#3b82f6" },
-  { id: 2, name: "Lifestyle", color: "#22c55e" },
-  { id: 3, name: "Business", color: "#f59e0b" },
-];
-const MOCK_AUTHORS = [
-  { id: 1, name: "Ion Popescu" },
-  { id: 2, name: "Maria Ionescu" },
-];
-const MOCK_SITES = [
-  { id: 1, name: "TechBlog.ro" },
-  { id: 2, name: "LifeStyle.md" },
-];
-
-// Mock scheduled posts
-const MOCK_SCHEDULED = [
-  {
-    id: 1,
-    topic: "Best AI Tools for Developers in 2024",
-    site: "TechBlog.ro",
-    scheduledDate: "2024-12-20",
-    scheduledTime: "09:00",
-    frequency: "once",
-    status: "pending",
-  },
-  {
-    id: 2,
-    topic: "Weekly Tech News Roundup",
-    site: "TechBlog.ro",
-    scheduledDate: "2024-12-21",
-    scheduledTime: "14:00",
-    frequency: "weekly",
-    status: "active",
-  },
-  {
-    id: 3,
-    topic: "Morning Motivation Tips",
-    site: "LifeStyle.md",
-    scheduledDate: "2024-12-19",
-    scheduledTime: "07:00",
-    frequency: "daily",
-    status: "paused",
-  },
 ];
 
 function Tag({ val, current, onClick }: { val: string; current: string; onClick: () => void }) {
@@ -273,6 +227,14 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function ScheduledPostsPage() {
   const [view, setView] = useState<"list" | "create">("list");
+  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [sites, setSites] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [authors, setAuthors] = useState<any[]>([]);
+  const [siteFilter, setSiteFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   const [formData, setFormData] = useState({
     topic: "",
     tone: "Profesional",
@@ -293,6 +255,93 @@ export default function ScheduledPostsPage() {
     notifyEmail: "",
     maxRetries: "3",
   });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [jobsRes, sitesRes, catsRes, authsRes] = await Promise.all([
+        fetch("/api/jobs"),
+        fetch("/api/sites"),
+        fetch("/api/categories"),
+        fetch("/api/authors"),
+      ]);
+      
+      const jobsData = await jobsRes.json();
+      const sitesData = await sitesRes.json();
+      const catsData = await catsRes.json();
+      const authsData = await authsRes.json();
+
+      setJobs(Array.isArray(jobsData) ? jobsData : []);
+      setSites(Array.isArray(sitesData) ? sitesData : []);
+      setCategories(Array.isArray(catsData) ? catsData : []);
+      setAuthors(Array.isArray(authsData) ? authsData : []);
+    } catch (err) {
+      console.error("Failed to load data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!formData.topic || !formData.site_id || !formData.scheduledDate) return;
+
+    try {
+      // Combine date and time
+      const scheduledAt = new Date(`${formData.scheduledDate}T${formData.scheduledTime}:00`);
+      
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          scheduled_at: scheduledAt.toISOString(),
+          config: {
+            selectedDays: formData.selectedDays,
+            dayOfMonth: formData.dayOfMonth,
+            autoPublish: formData.autoPublish,
+            notifyEmail: formData.notifyEmail,
+            maxRetries: formData.maxRetries
+          }
+        }),
+      });
+
+      if (res.ok) {
+        setView("list");
+        loadData();
+      }
+    } catch (err) {
+      console.error("Failed to save job:", err);
+    }
+  };
+
+  const toggleStatus = async (id: number, currentStatus: string) => {
+    const nextStatus = currentStatus === "paused" ? "active" : "paused";
+    try {
+      await fetch(`/api/jobs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      loadData();
+    } catch (err) {
+      console.error("Failed to toggle status:", err);
+    }
+  };
+
+  const deleteJob = async (id: number) => {
+    if (!confirm("Sigur vrei să ștergi această programare?")) return;
+    try {
+      await fetch(`/api/jobs/${id}`, { method: "DELETE" });
+      loadData();
+    } catch (err) {
+      console.error("Failed to delete job:", err);
+    }
+  };
+
 
   return (
     <div style={{ padding: "28px 32px", maxWidth: 1200, margin: "0 auto" }}>
@@ -337,10 +386,10 @@ export default function ScheduledPostsPage() {
             }}
           >
             {[
-              { label: "Total Programări", value: "12", icon: "◷", color: "var(--accent)" },
-              { label: "Active", value: "5", icon: "▶", color: "var(--green)" },
-              { label: "În Așteptare", value: "4", icon: "◉", color: "var(--blue)" },
-              { label: "Finalizate Azi", value: "3", icon: "✓", color: "var(--muted)" },
+              { label: "Total Programări", value: jobs.length, icon: "◷", color: "var(--accent)" },
+              { label: "Active", value: jobs.filter(j => j.status === "active").length, icon: "▶", color: "var(--green)" },
+              { label: "În Așteptare", value: jobs.filter(j => j.status === "pending").length, icon: "◉", color: "var(--blue)" },
+              { label: "Finalizate", value: jobs.filter(j => j.status === "completed").length, icon: "✓", color: "var(--muted)" },
             ].map((stat) => (
               <Card key={stat.label} style={{ padding: "20px 24px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -397,6 +446,8 @@ export default function ScheduledPostsPage() {
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <select
+                  value={siteFilter}
+                  onChange={e => setSiteFilter(e.target.value)}
                   style={{
                     padding: "6px 12px",
                     fontSize: 12,
@@ -405,13 +456,15 @@ export default function ScheduledPostsPage() {
                   }}
                 >
                   <option value="">Toate Site-urile</option>
-                  {MOCK_SITES.map((s) => (
+                  {sites.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
                     </option>
                   ))}
                 </select>
                 <select
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
                   style={{
                     padding: "6px 12px",
                     fontSize: 12,
@@ -463,7 +516,10 @@ export default function ScheduledPostsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {MOCK_SCHEDULED.map((post) => (
+                  {jobs
+                    .filter(j => !siteFilter || String(j.site_id) === siteFilter)
+                    .filter(j => !statusFilter || j.status === statusFilter)
+                    .map((post) => (
                     <tr
                       key={post.id}
                       style={{
@@ -494,7 +550,7 @@ export default function ScheduledPostsPage() {
                             color: "var(--muted)",
                           }}
                         >
-                          {post.site}
+                          {post.site?.name}
                         </span>
                       </td>
                       <td
@@ -505,7 +561,7 @@ export default function ScheduledPostsPage() {
                           fontSize: 12,
                         }}
                       >
-                        {post.scheduledDate}
+                        {new Date(post.scheduled_at).toLocaleDateString()}
                       </td>
                       <td
                         style={{
@@ -516,7 +572,7 @@ export default function ScheduledPostsPage() {
                           fontWeight: 600,
                         }}
                       >
-                        {post.scheduledTime}
+                        {new Date(post.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td style={{ padding: "14px 8px", color: "var(--muted)", fontSize: 12 }}>
                         {post.frequency === "once"
@@ -535,10 +591,10 @@ export default function ScheduledPostsPage() {
                           <Btn small variant="ghost">
                             ✎
                           </Btn>
-                          <Btn small variant="ghost">
+                          <Btn small variant="ghost" onClick={() => toggleStatus(post.id, post.status)}>
                             {post.status === "paused" ? "▶" : "⏸"}
                           </Btn>
-                          <Btn small variant="ghost">
+                          <Btn small variant="ghost" onClick={() => deleteJob(post.id)}>
                             ✕
                           </Btn>
                         </div>
@@ -550,7 +606,7 @@ export default function ScheduledPostsPage() {
             </div>
 
             {/* Empty State - hidden when there are items */}
-            {MOCK_SCHEDULED.length === 0 && (
+            {jobs.length === 0 && !loading && (
               <div
                 style={{
                   textAlign: "center",
@@ -607,6 +663,7 @@ export default function ScheduledPostsPage() {
 
               <Field label="Topic Principal" hint="Subiectul principal al articolului">
                 <input
+                  style={{ width: "100%" }}
                   value={formData.topic}
                   onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
                   placeholder="ex: Best AI Tools for Developers in 2024"
@@ -618,13 +675,14 @@ export default function ScheduledPostsPage() {
                   value={formData.instructions}
                   onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
                   placeholder="ex: Include exemple practice, menționează prețuri, compară cu alternative..."
-                  style={{ minHeight: 100, resize: "vertical" }}
+                  style={{ minHeight: 100, width: "100%", resize: "vertical" }}
                 />
               </Field>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <Field label="Cuvinte Cheie SEO" hint="Separate prin virgulă">
                   <input
+                    style={{ width: "100%" }}
                     value={formData.keywords}
                     onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
                     placeholder="ai tools, developers, programming"
@@ -632,9 +690,10 @@ export default function ScheduledPostsPage() {
                 </Field>
                 <Field label="Backlinks" hint="URL-uri pentru link-uri interne">
                   <input
+                    style={{ width: "100%" }}
                     value={formData.backlinks}
                     onChange={(e) => setFormData({ ...formData, backlinks: e.target.value })}
-                    placeholder="https://site.com/articol"
+                    placeholder='{"anchor": "url"}'
                   />
                 </Field>
               </div>
@@ -674,7 +733,7 @@ export default function ScheduledPostsPage() {
                     onChange={(e) => setFormData({ ...formData, site_id: e.target.value })}
                   >
                     <option value="">Selectează site</option>
-                    {MOCK_SITES.map((s) => (
+                    {sites.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
                       </option>
@@ -687,7 +746,7 @@ export default function ScheduledPostsPage() {
                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                   >
                     <option value="">Selectează</option>
-                    {MOCK_CATEGORIES.map((c) => (
+                    {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
@@ -700,7 +759,7 @@ export default function ScheduledPostsPage() {
                     onChange={(e) => setFormData({ ...formData, author_id: e.target.value })}
                   >
                     <option value="">Selectează</option>
-                    {MOCK_AUTHORS.map((a) => (
+                    {authors.map((a) => (
                       <option key={a.id} value={a.id}>
                         {a.name}
                       </option>
@@ -762,6 +821,7 @@ export default function ScheduledPostsPage() {
                 >
                   <input
                     type="date"
+                    style={{ width: "100%" }}
                     value={formData.scheduledDate}
                     onChange={(e) =>
                       setFormData({ ...formData, scheduledDate: e.target.value })
@@ -771,6 +831,7 @@ export default function ScheduledPostsPage() {
                 <Field label="Ora Publicării">
                   <input
                     type="time"
+                    style={{ width: "100%" }}
                     value={formData.scheduledTime}
                     onChange={(e) =>
                       setFormData({ ...formData, scheduledTime: e.target.value })
@@ -840,6 +901,7 @@ export default function ScheduledPostsPage() {
                 <Field label="Email Notificare" hint="Primește notificări la publicare">
                   <input
                     type="email"
+                    style={{ width: "100%" }}
                     value={formData.notifyEmail}
                     onChange={(e) => setFormData({ ...formData, notifyEmail: e.target.value })}
                     placeholder="email@example.com"
@@ -949,7 +1011,7 @@ export default function ScheduledPostsPage() {
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ fontSize: 11, color: "var(--dim)" }}>Site</span>
                     <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                      {MOCK_SITES.find((s) => s.id.toString() === formData.site_id)?.name ||
+                      {sites.find((s) => s.id.toString() === formData.site_id)?.name ||
                         "—"}
                     </span>
                   </div>
@@ -1022,7 +1084,7 @@ export default function ScheduledPostsPage() {
               )}
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <Btn disabled={!formData.topic || !formData.site_id || !formData.scheduledDate}>
+                <Btn onClick={handleSave} disabled={!formData.topic || !formData.site_id || !formData.scheduledDate}>
                   Salvează Programare
                 </Btn>
                 <Btn variant="ghost" onClick={() => setView("list")}>
@@ -1030,6 +1092,7 @@ export default function ScheduledPostsPage() {
                 </Btn>
               </div>
             </Card>
+
 
             {/* Tips Card */}
             <Card style={{ background: "rgba(245,158,11,0.05)", borderColor: "rgba(245,158,11,0.2)" }}>

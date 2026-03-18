@@ -86,4 +86,6 @@ export interface GenerateOptions {
   site_id?: number;
   ai_persona?: string;
   backlinks?: Record<string, string>;
+  instructions?: string;
+  keywords?: string;
 }

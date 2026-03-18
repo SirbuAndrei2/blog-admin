@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 
 interface Site {
     id: number;
@@ -23,7 +22,6 @@ export default function BannersPage() {
     const [sites, setSites] = useState<Site[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
-    const [error, setError] = useState("");
 
     // Form State
     const [siteId, setSiteId] = useState<number | "">("");
@@ -50,8 +48,8 @@ export default function BannersPage() {
             const sData = await sRes.json();
             setBanners(Array.isArray(bData) ? bData : []);
             setSites(Array.isArray(sData) ? sData : []);
-        } catch (err) {
-            setError("Eroare la încărcarea datelor");
+        } catch {
+            // ignore load errors
         } finally {
             setLoading(false);
         }

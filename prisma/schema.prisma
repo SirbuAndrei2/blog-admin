@@ -53,6 +53,7 @@ model Category {
   slug     String    @unique @db.VarChar(200)
   color    String?   @db.VarChar(50)
   articles Article[]
+  jobs     AutomationJob[]
 }
 
 model Author {
@@ -61,6 +62,7 @@ model Author {
   image    String?   @db.VarChar(1000)
   bio      String?   @db.Text
   articles Article[]
+  jobs     AutomationJob[]
 }
 
 model Site {
@@ -72,6 +74,7 @@ model Site {
   ai_persona String?   @db.Text
   articles   Article[]
   banners    Banner[]
+  jobs       AutomationJob[]
 }
 
 model Banner {
@@ -97,4 +100,33 @@ model User {
   name       String?  @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+model AutomationJob {
+  id           Int      @id @default(autoincrement())
+  topic        String   @db.VarChar(500)
+  instructions String?  @db.Text
+  keywords     String?  @db.VarChar(500)
+  backlinks    String?  @db.Text
+  tone         String   @db.VarChar(50)
+  length       String   @db.VarChar(50)
+  language     String   @default("ro") @db.VarChar(10)
+  frequency    String   @db.VarChar(20) // once, daily, weekly, monthly
+  status       String   @default("pending") @db.VarChar(20) // pending, active, paused, completed
+  scheduled_at DateTime
+  config       Json?    // for additional recurrence settings
+  site_id      Int
+  category_id  Int?
+  author_id    Int?
+  
+  site         Site     @relation(fields: [site_id], references: [id])
+  category     Category? @relation(fields: [category_id], references: [id])
+  author       Author?   @relation(fields: [author_id], references: [id])
+  
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([status])
+  @@index([scheduled_at])
+  @@index([site_id])
 }
